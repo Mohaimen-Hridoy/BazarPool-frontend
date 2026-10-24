@@ -33,6 +33,10 @@ export class ApiClient {
     const data: ApiResponse<T> = await response.json();
 
     if (!response.ok || !data.success) {
+      if (response.status === 401 && typeof window !== 'undefined' && !endpoint.includes('/auth/login')) {
+        localStorage.removeItem('bazarpool_token');
+        localStorage.removeItem('bazarpool_user');
+      }
       const errorMessage = data.message || 'An error occurred during request.';
       const error: any = new Error(errorMessage);
       error.statusCode = data.statusCode || response.status;
