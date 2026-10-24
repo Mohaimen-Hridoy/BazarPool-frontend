@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/authContext';
 import { ApiClient } from '@/lib/api';
-import { ShoppingBag, AlertCircle, ArrowRight, KeyRound } from 'lucide-react';
+import { ShoppingBag, AlertCircle, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,11 +33,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleQuickLogin = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('password123');
   };
 
   return (
@@ -72,7 +67,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="e.g. consumer@gmail.com"
+              placeholder="e.g. yourname@domain.com"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
@@ -94,64 +89,24 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {loading ? 'Authenticating...' : 'Sign In'}
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 
-        {/* Quick Demo Logins for Evaluator/Interviewer */}
-        <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-            <KeyRound className="w-3.5 h-3.5" />
-            Quick Demo Accounts (1-Click Fill)
+        <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 text-center space-y-3">
+          <p className="text-xs text-slate-500">
+            Don’t have an account yet?{' '}
+            <Link href="/register" className="font-bold text-emerald-600 hover:underline">
+              Create an account
+            </Link>
           </p>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('consumer@gmail.com')}
-              className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/80 hover:bg-emerald-50 text-slate-700 dark:text-slate-300 text-left border border-slate-200 dark:border-slate-700"
-            >
-              <span className="font-bold block text-emerald-600">Consumer</span>
-              <span className="text-[10px] text-slate-400 truncate block">consumer@gmail.com</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('supplier@agrofarm.com')}
-              className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/80 hover:bg-emerald-50 text-slate-700 dark:text-slate-300 text-left border border-slate-200 dark:border-slate-700"
-            >
-              <span className="font-bold block text-amber-600">Wholesaler</span>
-              <span className="text-[10px] text-slate-400 truncate block">supplier@agrofarm.com</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('coordinator@dhanmondi.com')}
-              className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/80 hover:bg-emerald-50 text-slate-700 dark:text-slate-300 text-left border border-slate-200 dark:border-slate-700"
-            >
-              <span className="font-bold block text-blue-600">Hub Coordinator</span>
-              <span className="text-[10px] text-slate-400 truncate block">coordinator@...</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('admin@bazarpool.com')}
-              className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/80 hover:bg-emerald-50 text-slate-700 dark:text-slate-300 text-left border border-slate-200 dark:border-slate-700"
-            >
-              <span className="font-bold block text-purple-600">Admin</span>
-              <span className="text-[10px] text-slate-400 truncate block">admin@bazarpool.com</span>
-            </button>
-          </div>
+          <p className="text-[11px] text-slate-400">
+            Protected by cryptographic JWT session authorization & double-entry security.
+          </p>
         </div>
-
-        <p className="text-center text-xs text-slate-500 mt-6">
-          Don’t have an account?{' '}
-          <Link href="/register" className="font-bold text-emerald-600 hover:underline">
-            Create an account
-          </Link>
-        </p>
       </div>
     </div>
   );

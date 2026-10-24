@@ -16,7 +16,6 @@ import {
   Zap,
   LogIn,
   UserCheck,
-  Sparkles,
 } from 'lucide-react';
 
 interface CommitmentModalProps {
@@ -30,11 +29,10 @@ export const CommitmentModal: React.FC<CommitmentModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { user, wallet, refreshUser, login } = useAuth();
+  const { user, wallet, refreshUser } = useAuth();
   const { t, language } = useLanguage();
   const [quantity, setQuantity] = useState<number>(1);
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [topUpLoading, setTopUpLoading] = useState(false);
@@ -47,25 +45,6 @@ export const CommitmentModal: React.FC<CommitmentModalProps> = ({
   const remainingCap = campaign.remainingQuantity;
 
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
-
-  const handleQuickDemoLogin = async () => {
-    setDemoLoading(true);
-    setError(null);
-    try {
-      const res = await ApiClient.post<any>('/auth/login', {
-        email: 'consumer@gmail.com',
-        password: 'password123',
-      });
-      if (res.success && res.data) {
-        login(res.data.token, res.data.user, res.data.wallet);
-        await refreshUser();
-      }
-    } catch (err: any) {
-      setError(err.message || 'Demo login failed.');
-    } finally {
-      setDemoLoading(false);
-    }
-  };
 
   const handleCommit = async () => {
     if (!user) {
@@ -252,32 +231,20 @@ export const CommitmentModal: React.FC<CommitmentModalProps> = ({
                     </h4>
                     <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
                       {language === 'bn'
-                        ? 'পাইকারি মূল্যে পণ্য সংরক্ষণ করতে এবং ডিজিটাল QR পিকআপ পাস পেতে অনুগ্রহ করে লগইন করুন।'
+                        ? 'পাইকারি মূল্যে পণ্য সংরক্ষণ করতে এবং ডিজিটাল QR পিকআপ পাস পেতে আপনার অ্যাকাউন্টে লগইন করুন।'
                         : 'Please sign in or create an account to reserve products at wholesale pricing and receive your digital QR pickup pass.'}
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-3.5 pt-3 border-t border-amber-200/60 dark:border-amber-800/40 flex flex-col sm:flex-row gap-2">
+                <div className="mt-3.5 pt-3 border-t border-amber-200/60 dark:border-amber-800/40">
                   <Link
                     href={`/login?redirect=${encodeURIComponent(currentPath)}`}
-                    className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs text-center shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs text-center shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-1.5"
                   >
                     <LogIn className="w-3.5 h-3.5" />
-                    {language === 'bn' ? 'লগইন / রেজিস্টার' : 'Sign In / Register'}
+                    {language === 'bn' ? 'লগইন বা রেজিস্টার করুন' : 'Sign In or Create Account'}
                   </Link>
-
-                  <button
-                    type="button"
-                    onClick={handleQuickDemoLogin}
-                    disabled={demoLoading}
-                    className="py-2 px-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 text-slate-800 dark:text-slate-200 font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                    {demoLoading
-                      ? (language === 'bn' ? 'লগইন হচ্ছে...' : 'Signing in...')
-                      : (language === 'bn' ? '⚡ ১-ক্লিকে ডেমো লগইন' : '⚡ 1-Click Demo Login')}
-                  </button>
                 </div>
               </div>
             ) : (
@@ -311,28 +278,15 @@ export const CommitmentModal: React.FC<CommitmentModalProps> = ({
 
             {/* Commit / Sign In Button */}
             {!user ? (
-              <div className="space-y-2">
-                <Link
-                  href={`/login?redirect=${encodeURIComponent(currentPath)}`}
-                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2"
-                >
-                  <LogIn className="w-4 h-4" />
-                  {language === 'bn'
-                    ? `লগইন করে কমিট করুন (৳${totalCost.toLocaleString()})`
-                    : `Sign In to Commit (৳${totalCost.toLocaleString()})`}
-                </Link>
-                <button
-                  type="button"
-                  onClick={handleQuickDemoLogin}
-                  disabled={demoLoading}
-                  className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                  {language === 'bn'
-                    ? 'দ্রুত টেস্ট করতে চান? ডেমো ক্রেতা হিসেবে ১-ক্লিক লগইন'
-                    : 'Quick evaluation? Instant 1-Click Demo Consumer Login'}
-                </button>
-              </div>
+              <Link
+                href={`/login?redirect=${encodeURIComponent(currentPath)}`}
+                className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2"
+              >
+                <LogIn className="w-4 h-4" />
+                {language === 'bn'
+                  ? `লগইন করে কমিট করুন (৳${totalCost.toLocaleString()})`
+                  : `Sign In to Commit (৳${totalCost.toLocaleString()})`}
+              </Link>
             ) : (
               <button
                 onClick={handleCommit}

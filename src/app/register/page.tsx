@@ -57,7 +57,7 @@ export default function RegisterPage() {
             Create BazarPool Account
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Get an instant simulated ৳1,000 credit in your virtual wallet
+            Join collective wholesale buying with zero middlemen
           </p>
         </div>
 
@@ -73,28 +73,39 @@ export default function RegisterPage() {
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Account Role
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setRole('CONSUMER')}
-                className={`py-2 px-3 text-xs font-bold rounded-xl border transition ${
+                className={`py-2 px-2 text-center text-xs font-bold rounded-xl border transition ${
                   role === 'CONSUMER'
-                    ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-500 text-emerald-700 dark:text-emerald-300'
+                    ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-sm'
                     : 'border-slate-200 dark:border-slate-700 text-slate-500'
                 }`}
               >
-                Consumer / Buyer
+                Consumer
               </button>
               <button
                 type="button"
                 onClick={() => setRole('SUPPLIER')}
-                className={`py-2 px-3 text-xs font-bold rounded-xl border transition ${
+                className={`py-2 px-2 text-center text-xs font-bold rounded-xl border transition ${
                   role === 'SUPPLIER'
-                    ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-500 text-emerald-700 dark:text-emerald-300'
+                    ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-sm'
                     : 'border-slate-200 dark:border-slate-700 text-slate-500'
                 }`}
               >
-                Wholesale Supplier
+                Supplier
+              </button>
+              <button
+                type="button"
+                onClick={() => setRole('HUB_COORDINATOR')}
+                className={`py-2 px-2 text-center text-xs font-bold rounded-xl border transition ${
+                  role === 'HUB_COORDINATOR'
+                    ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-sm'
+                    : 'border-slate-200 dark:border-slate-700 text-slate-500'
+                }`}
+              >
+                Hub Lead
               </button>
             </div>
           </div>
@@ -108,7 +119,7 @@ export default function RegisterPage() {
               required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="e.g. Rahim Ahmed"
+              placeholder="e.g. Tanvir Hasan or Green Agro"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
@@ -122,20 +133,7 @@ export default function RegisterPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="e.g. rahim@gmail.com"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+8801700000000"
+              placeholder="e.g. name@domain.com"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
@@ -147,9 +145,24 @@ export default function RegisterPage() {
             <input
               type="password"
               required
+              minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minimum 6 characters"
+              placeholder="At least 6 characters"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Phone Number
+            </label>
+            <input
+              type="tel"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. 01700000000"
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
@@ -157,17 +170,17 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            {loading ? 'Creating Account...' : 'Complete Registration'}
+            {loading ? 'Creating Account...' : 'Register'}
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 
         <p className="text-center text-xs text-slate-500 mt-6">
-          Already registered?{' '}
+          Already have an account?{' '}
           <Link href="/login" className="font-bold text-emerald-600 hover:underline">
-            Sign In here
+            Sign In
           </Link>
         </p>
       </div>
