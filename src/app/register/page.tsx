@@ -35,7 +35,9 @@ export default function RegisterPage() {
 
       if (res.success && res.data) {
         login(res.data.token, res.data.user, res.data.wallet);
-        router.push('/dashboard');
+        const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const redirect = searchParams?.get('redirect') || '/dashboard';
+        router.push(redirect);
       }
     } catch (err: any) {
       setError(err.message || 'Registration failed.');
