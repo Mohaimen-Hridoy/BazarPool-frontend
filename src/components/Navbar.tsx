@@ -241,13 +241,13 @@ export const Navbar: React.FC = () => {
                   href="/login"
                   className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-emerald-600 transition"
                 >
-                  Sign In
+                  {t.navSignIn}
                 </Link>
                 <Link
                   href="/register"
                   className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm shadow-emerald-600/30 transition"
                 >
-                  Get Started
+                  {t.navRegister}
                 </Link>
               </div>
             )}
@@ -270,14 +270,14 @@ export const Navbar: React.FC = () => {
               onClick={() => setMobileMenuOpen(false)}
               className="block text-sm font-medium text-slate-700 dark:text-slate-200 px-2 py-1"
             >
-              Active Campaigns
+              {t.navPools}
             </Link>
             <Link
               href="/#how-it-works"
               onClick={() => setMobileMenuOpen(false)}
               className="block text-sm font-medium text-slate-700 dark:text-slate-200 px-2 py-1"
             >
-              How It Works
+              {t.navHow}
             </Link>
             {user && (
               <Link
@@ -285,7 +285,7 @@ export const Navbar: React.FC = () => {
                 onClick={() => setMobileMenuOpen(false)}
                 className="block text-sm font-medium text-slate-700 dark:text-slate-200 px-2 py-1"
               >
-                Dashboard
+                {t.navDashboard}
               </Link>
             )}
             {user && (user.role === 'HUB_COORDINATOR' || user.role === 'ADMIN') && (
@@ -294,7 +294,7 @@ export const Navbar: React.FC = () => {
                 onClick={() => setMobileMenuOpen(false)}
                 className="block text-sm font-medium text-amber-600 px-2 py-1"
               >
-                QR Pickup Scanner
+                {t.navScanner}
               </Link>
             )}
           </div>

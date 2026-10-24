@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { useAuth } from '@/lib/authContext';
+import { useLanguage } from '@/lib/i18n';
 import { ApiClient } from '@/lib/api';
 import {
   QrCode,
@@ -20,6 +21,7 @@ import {
 
 export default function PickupVerifierPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [tokenCode, setTokenCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any | null>(null);
@@ -131,10 +133,10 @@ export default function PickupVerifierPage() {
             <QrCode className="w-7 h-7" />
           </div>
           <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">
-            Hub Pickup QR Token Verifier
+            {t.verifierTitle}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Authorize and verify consumer product handovers. Double redemptions are strictly blocked.
+            {t.verifierSub}
           </p>
         </div>
 
@@ -145,7 +147,7 @@ export default function PickupVerifierPage() {
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                 <Camera className="w-4 h-4 text-emerald-600" />
-                Live Camera QR Scanner
+                {t.liveCamera}
               </span>
 
               {cameraActive ? (
@@ -155,7 +157,7 @@ export default function PickupVerifierPage() {
                   className="px-3 py-1 rounded-xl bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 text-xs font-bold flex items-center gap-1 transition"
                 >
                   <CameraOff className="w-3.5 h-3.5" />
-                  Turn Off Camera
+                  {t.turnOffCamera}
                 </button>
               ) : (
                 <button
@@ -164,7 +166,7 @@ export default function PickupVerifierPage() {
                   className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 transition shadow-sm"
                 >
                   <Camera className="w-3.5 h-3.5" />
-                  Open Live Camera
+                  {t.openCamera}
                 </button>
               )}
             </div>
@@ -180,7 +182,7 @@ export default function PickupVerifierPage() {
                 />
                 <div className="absolute inset-0 border-2 border-dashed border-emerald-400/80 rounded-2xl pointer-events-none m-8 animate-pulse" />
                 <span className="absolute bottom-3 px-3 py-1 bg-black/70 backdrop-blur rounded-full text-[10px] text-white">
-                  Point camera at Consumer's QR Pickup Pass
+                  {t.pointCamera}
                 </span>
               </div>
             )}
@@ -194,7 +196,7 @@ export default function PickupVerifierPage() {
           <form onSubmit={handleVerify} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                Enter or Paste Pickup Token Code
+                {t.enterToken}
               </label>
               <div className="relative">
                 <input
@@ -214,7 +216,7 @@ export default function PickupVerifierPage() {
               className="w-full py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-md shadow-amber-500/30 transition flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <ShieldCheck className="w-5 h-5" />
-              {loading ? 'Validating Token & Checking Security...' : 'Authorize & Verify Pickup'}
+              {loading ? t.validatingBtn : t.authorizeBtn}
             </button>
           </form>
 
