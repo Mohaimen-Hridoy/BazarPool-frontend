@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Campaign } from '@/types';
 import { ApiClient } from '@/lib/api';
+import { useLanguage } from '@/lib/i18n';
 import { CampaignCard } from '@/components/CampaignCard';
 import { CommitmentModal } from '@/components/CommitmentModal';
 import {
@@ -16,15 +17,20 @@ import {
   Truck,
   Search,
   MapPin,
+  Sparkles,
+  PartyPopper,
+  Radio,
 } from 'lucide-react';
 
 export default function Home() {
+  const { t, language } = useLanguage();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedCity, setSelectedCity] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [celebrationMsg, setCelebrationMsg] = useState<string | null>(null);
 
   const fetchCampaigns = async () => {
     try {
@@ -43,6 +49,51 @@ export default function Home() {
   useEffect(() => {
     fetchCampaigns();
   }, []);
+
+  // Real-Time Server-Sent Events (SSE) Stream
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource(`${apiUrl}/campaigns/stream/live`);
+      eventSource.addEventListener('POOL_UPDATED', (e) => {
+        try {
+          const update = JSON.parse(e.data);
+          setCampaigns((prev) =>
+            prev.map((c) =>
+              c.id === update.campaignId
+                ? {
+                    ...c,
+                    committedQuantity: update.committedQuantity ?? c.committedQuantity,
+                    targetQuantity: update.targetQuantity ?? c.targetQuantity,
+                    progressPercent: update.progressPercent ?? c.progressPercent,
+                    remainingQuantity: update.remainingQuantity ?? c.remainingQuantity,
+                    status: update.status ?? c.status,
+                  }
+                : c
+            )
+          );
+        } catch {}
+      });
+
+      eventSource.addEventListener('POOL_LOCKED', (e) => {
+        try {
+          const lockedData = JSON.parse(e.data);
+          setCelebrationMsg(
+            language === 'bn'
+              ? `🎉 দারুণ সুখবর! "${lockedData.title}" পুলটি ১০০% পূর্ণ হয়েছে এবং সরবরাহের জন্য লক করা হয়েছে!`
+              : `🎉 Congratulations! "${lockedData.title}" has reached 100% capacity and is now locked for fulfillment!`
+          );
+          setTimeout(() => setCelebrationMsg(null), 8000);
+          fetchCampaigns();
+        } catch {}
+      });
+    } catch {}
+
+    return () => {
+      if (eventSource) eventSource.close();
+    };
+  }, [language]);
 
   const categories = ['ALL', 'Grains & Rice', 'Edible Oils', 'Dairy & Poultry', 'Pulses & Spices'];
 
@@ -71,6 +122,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+      {/* Live Pool Locked Celebration Banner */}
+      {celebrationMsg && (
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white py-3 px-4 text-center font-bold text-xs sm:text-sm shadow-lg flex items-center justify-center gap-2 animate-bounce sticky top-16 z-30">
+          <PartyPopper className="w-5 h-5 shrink-0" />
+          <span>{celebrationMsg}</span>
+        </div>
+      )}
+
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-emerald-900 via-slate-900 to-slate-950 text-white py-20 px-4 sm:px-6 lg:px-8 border-b border-slate-800">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(16,185,129,0.15),transparent_70%)]" />
@@ -78,15 +137,15 @@ export default function Home() {
         <div className="max-w-5xl mx-auto text-center relative z-10 space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold backdrop-blur">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-            Community-Based Wholesale Group-Buying Platform
+            {t.heroBadge}
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight max-w-4xl mx-auto leading-tight">
-            Buy Direct at Wholesale Prices by <span className="text-emerald-400">Pooling Demand</span>
+            {t.heroTitlePrefix} <span className="text-emerald-400">{t.heroTitleHighlight}</span>
           </h1>
 
           <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            Individual households and student hostels often can’t meet massive wholesale minimum orders. BazarPool combines community demand so everyone unlocks farm & mill rates with zero middlemen.
+            {t.heroDescription}
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
@@ -94,14 +153,14 @@ export default function Home() {
               href="#pools"
               className="px-6 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/30 transition flex items-center gap-2"
             >
-              Explore Active Pools
+              {t.exploreBtn}
               <ArrowRight className="w-4 h-4" />
             </a>
             <a
               href="#how-it-works"
               className="px-6 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm border border-slate-700 transition"
             >
-              How BazarPool Works
+              {t.howItWorksBtn}
             </a>
           </div>
 
@@ -109,19 +168,19 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-12 border-t border-slate-800/80 max-w-4xl mx-auto text-left">
             <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800">
               <p className="text-2xl font-black text-emerald-400">25–40%</p>
-              <p className="text-xs text-slate-400 mt-1">Average Wholesale Discount</p>
+              <p className="text-xs text-slate-400 mt-1">{t.statDiscount}</p>
             </div>
             <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800">
               <p className="text-2xl font-black text-emerald-400">100%</p>
-              <p className="text-xs text-slate-400 mt-1">Automated Expiry Refund</p>
+              <p className="text-xs text-slate-400 mt-1">{t.statRefund}</p>
             </div>
             <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800">
               <p className="text-2xl font-black text-emerald-400">QR-Code</p>
-              <p className="text-xs text-slate-400 mt-1">Hub Verification System</p>
+              <p className="text-xs text-slate-400 mt-1">{t.statQr}</p>
             </div>
             <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800">
               <p className="text-2xl font-black text-emerald-400">Double-Entry</p>
-              <p className="text-xs text-slate-400 mt-1">Virtual Ledger Security</p>
+              <p className="text-xs text-slate-400 mt-1">{t.statLedger}</p>
             </div>
           </div>
         </div>
@@ -132,14 +191,20 @@ export default function Home() {
         <div className="space-y-6 mb-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
-                Live Opportunities
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
+                  {t.poolsSubtitle}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                  <Radio className="w-2.5 h-2.5 animate-pulse text-emerald-600" />
+                  Live Sync Active
+                </span>
+              </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-                Active Wholesale Pools
+                {t.poolsTitle}
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                Commit individual quantities. When total target is reached, the pool locks and fulfills!
+                {t.poolsHint}
               </p>
             </div>
 
@@ -153,7 +218,7 @@ export default function Home() {
               >
                 {cities.map((city) => (
                   <option key={city} value={city}>
-                    {city === 'ALL' ? 'All Locations' : city}
+                    {city === 'ALL' ? t.allLocations : city}
                   </option>
                 ))}
               </select>
@@ -169,7 +234,7 @@ export default function Home() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search commodities, pools, hubs..."
+                placeholder={t.searchPlaceholder}
                 className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
@@ -180,13 +245,13 @@ export default function Home() {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
                     selectedCategory === cat
                       ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
                       : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
-                  {cat}
+                  {cat === 'ALL' ? t.allCategories : cat}
                 </button>
               ))}
             </div>
@@ -216,7 +281,7 @@ export default function Home() {
         ) : (
           <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
             <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">
-              No active group-buying pools match your filters.
+              {t.noPoolsFound}
             </p>
             <button
               onClick={() => {
@@ -226,7 +291,7 @@ export default function Home() {
               }}
               className="mt-3 px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold"
             >
-              Reset Filters
+              {t.resetFilters}
             </button>
           </div>
         )}
@@ -237,13 +302,15 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">
-              Frictionless Process
+              {language === 'bn' ? 'সহজ চার ধাপ' : 'Frictionless Process'}
             </span>
             <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-              How Community Group-Buying Works
+              {language === 'bn' ? 'গ্রুপ-বায়িং কীভাবে কাজ করে' : 'How Community Group-Buying Works'}
             </h2>
             <p className="text-sm text-slate-500 mt-2">
-              BazarPool solves coordination friction, payment tracking, and bulk distribution in four transparent steps.
+              {language === 'bn'
+                ? 'BazarPool সমন্বয়হীনতা ও মধ্যস্বত্বভোগীদের বাড়তি খরচ দূর করে স্বচ্ছ চার ধাপে সাশ্রয়ী বাজার নিশ্চিত করে।'
+                : 'BazarPool solves coordination friction, payment tracking, and bulk distribution in four transparent steps.'}
             </p>
           </div>
 
@@ -254,10 +321,12 @@ export default function Home() {
                 01
               </div>
               <h3 className="font-bold text-base text-slate-900 dark:text-white mb-2">
-                Suppliers Launch Pool
+                {language === 'bn' ? 'সাপ্লায়ার পুল লঞ্চ করেন' : 'Suppliers Launch Pool'}
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Wholesalers list staple products with minimum target volumes (e.g. 50 sacks of rice) and heavy wholesale discounts.
+                {language === 'bn'
+                  ? 'পাইকাররা সরাসরি মিল রেটে নির্দিষ্ট পরিমাণ পণ্য (যেমন ৫০ বস্তা চাল) বিক্রির জন্য পুল খোলেন।'
+                  : 'Wholesalers list staple products with minimum target volumes (e.g. 50 sacks of rice) and heavy wholesale discounts.'}
               </p>
             </div>
 
@@ -267,10 +336,12 @@ export default function Home() {
                 02
               </div>
               <h3 className="font-bold text-base text-slate-900 dark:text-white mb-2">
-                Consumers Commit
+                {language === 'bn' ? 'ক্রেতারা অংশ নেন' : 'Consumers Commit'}
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Households and students commit small portions (1–3 sacks). Funds are securely reserved in your virtual wallet.
+                {language === 'bn'
+                  ? 'পরিবার বা মেস ম্যানেজাররা ক্ষুদ্র পরিমাণে (১-৩ বস্তা) অংশ নেন। ওয়ালেটে টাকা সংরক্ষিত থাকে।'
+                  : 'Households and students commit small portions (1–3 sacks). Funds are securely reserved in your virtual wallet.'}
               </p>
             </div>
 
@@ -280,10 +351,12 @@ export default function Home() {
                 03
               </div>
               <h3 className="font-bold text-base text-slate-900 dark:text-white mb-2">
-                Target Met & Locked
+                {language === 'bn' ? 'টার্গেট পূরণ ও লক' : 'Target Met & Locked'}
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Once 100% committed, the campaign locks automatically! Supplier dispatches orders directly to local neighborhood hubs.
+                {language === 'bn'
+                  ? '১০০% টার্গেট পূর্ণ হলে স্বয়ংক্রিয়ভাবে লক হয়ে যায় এবং সাপ্লায়ার স্থানীয় পিকআপ হাবে পণ্য পাঠান।'
+                  : 'Once 100% committed, the campaign locks automatically! Supplier dispatches orders directly to local neighborhood hubs.'}
               </p>
             </div>
 
@@ -293,10 +366,12 @@ export default function Home() {
                 04
               </div>
               <h3 className="font-bold text-base text-slate-900 dark:text-white mb-2">
-                QR Hub Pickup
+                {language === 'bn' ? 'কিউআর হাবে পিকআপ' : 'QR Hub Pickup'}
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Consumers show their cryptographic QR pickup pass to the hub coordinator for instant hand-over verification.
+                {language === 'bn'
+                  ? 'ক্রেতারা তাদের ডিজিটাল কিউআর পাস দেখিয়ে হাব থেকে সহজেই পণ্য বুঝে নেন।'
+                  : 'Consumers show their cryptographic QR pickup pass to the hub coordinator for instant hand-over verification.'}
               </p>
             </div>
           </div>

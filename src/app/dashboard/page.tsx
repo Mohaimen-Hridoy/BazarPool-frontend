@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/authContext';
+import { useLanguage } from '@/lib/i18n';
 import { ApiClient } from '@/lib/api';
 import { Commitment, Campaign, Product, PickupHub, AdminStats } from '@/types';
 import {
@@ -26,12 +27,16 @@ import {
   ExternalLink,
   Ban,
   CheckCircle2,
+  Smartphone,
+  CreditCard,
+  Zap,
 } from 'lucide-react';
 
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, wallet, refreshUser, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<'commitments' | 'wallet' | 'campaigns' | 'products' | 'admin'>('commitments');
   const [commitments, setCommitments] = useState<Commitment[]>([]);
@@ -42,9 +47,13 @@ function DashboardContent() {
   const [loading, setLoading] = useState(false);
   const [selectedQrOrder, setSelectedQrOrder] = useState<any | null>(null);
 
-  // Top Up state
-  const [topUpAmount, setTopUpAmount] = useState<number>(3000);
-  const [topUpLoading, setTopUpLoading] = useState(false);
+  // MFS Top Up state
+  const [showMfsModal, setShowMfsModal] = useState(false);
+  const [mfsMethod, setMfsMethod] = useState<'BKASH' | 'NAGAD' | 'CARD'>('BKASH');
+  const [mfsAmount, setMfsAmount] = useState<number>(3000);
+  const [mfsPhone, setMfsPhone] = useState<string>('01711002233');
+  const [mfsTrxId, setMfsTrxId] = useState<string>(`TRX${Math.floor(100000 + Math.random() * 900000)}`);
+  const [mfsLoading, setMfsLoading] = useState(false);
 
   // New Campaign Form state
   const [showNewCampaignModal, setShowNewCampaignModal] = useState(false);
@@ -133,16 +142,44 @@ function DashboardContent() {
     fetchData();
   }, [user]);
 
-  const handleSimulateTopUp = async () => {
-    setTopUpLoading(true);
+  const handleMfsCheckout = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (mfsAmount <= 0) {
+      alert('Please enter a valid recharge amount');
+      return;
+    }
+    setMfsLoading(true);
     try {
-      await ApiClient.post('/wallet/top-up', { amount: topUpAmount });
+      const res = await ApiClient.post<any>('/wallet/mfs-checkout', {
+        amount: Number(mfsAmount),
+        method: mfsMethod,
+        senderNumber: mfsPhone,
+        senderTrxId: mfsTrxId,
+      });
+      if (res.success) {
+        alert(res.message || `৳${mfsAmount.toLocaleString()} credited successfully!`);
+        setShowMfsModal(false);
+        setMfsTrxId(`TRX${Math.floor(100000 + Math.random() * 900000)}`);
+        await refreshUser();
+        fetchData();
+      }
+    } catch (err: any) {
+      alert(err.message || 'MFS payment failed');
+    } finally {
+      setMfsLoading(false);
+    }
+  };
+
+  const handleSimulateTopUp = async (amount: number = 3000) => {
+    setMfsLoading(true);
+    try {
+      await ApiClient.post('/wallet/top-up', { amount });
       await refreshUser();
-      alert(`৳${topUpAmount.toLocaleString()} added to your virtual wallet balance.`);
+      alert(`৳${amount.toLocaleString()} added to your virtual wallet balance.`);
     } catch (err: any) {
       alert(err.message || 'Top-up failed');
     } finally {
-      setTopUpLoading(false);
+      setMfsLoading(false);
     }
   };
 
@@ -304,24 +341,23 @@ function DashboardContent() {
           <div className="flex flex-wrap items-center gap-4 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400">
-                Available Wallet Balance
+                {t.availableWalletBalance}
               </span>
               <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
                 ৳{wallet ? wallet.availableBalance.toLocaleString() : '0.00'}
               </p>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Reserved: ৳{wallet ? wallet.reservedBalance.toLocaleString() : '0.00'}
+                {t.reservedBalance}: ৳{wallet ? wallet.reservedBalance.toLocaleString() : '0.00'}
               </p>
             </div>
 
-            <div className="pl-4 border-l border-slate-200 dark:border-slate-700">
+            <div className="pl-4 border-l border-slate-200 dark:border-slate-700 flex flex-col gap-1.5">
               <button
-                onClick={handleSimulateTopUp}
-                disabled={topUpLoading}
+                onClick={() => setShowMfsModal(true)}
                 className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm shadow-emerald-600/30 transition flex items-center gap-1.5"
               >
-                <PlusCircle className="w-3.5 h-3.5" />
-                {topUpLoading ? 'Processing...' : `+ Top-Up ৳${topUpAmount.toLocaleString()}`}
+                <Smartphone className="w-3.5 h-3.5" />
+                {t.topUpWalletBtn}
               </button>
             </div>
           </div>
@@ -338,7 +374,7 @@ function DashboardContent() {
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              My Commitments & QR Passes ({commitments.length})
+              {t.myCommitmentsTab} ({commitments.length})
             </button>
           )}
 
@@ -352,7 +388,7 @@ function DashboardContent() {
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                Wholesale Campaigns ({supplierCampaigns.length})
+                {t.supplierCampaignsTab} ({supplierCampaigns.length})
               </button>
               <button
                 onClick={() => setActiveTab('products')}
@@ -362,7 +398,7 @@ function DashboardContent() {
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                Product Catalog ({products.length})
+                {t.productsCatalogTab} ({products.length})
               </button>
             </>
           )}
@@ -376,7 +412,7 @@ function DashboardContent() {
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              Admin Operations & Hubs
+              {t.adminOpsTab}
             </button>
           )}
 
@@ -388,7 +424,7 @@ function DashboardContent() {
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            Wallet Ledger & Transactions
+            {t.walletLedgerTab}
           </button>
         </div>
 
@@ -1242,6 +1278,158 @@ function DashboardContent() {
             <p className="text-[11px] text-slate-500">
               Show this QR code or token to the Hub Coordinator during product collection.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 5: MFS Instant Wallet Recharge */}
+      {showMfsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowMfsModal(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="mb-4">
+              <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
+                MFS Payment Gateway
+              </span>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">
+                {t.topUpTitle}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                {t.topUpSub}
+              </p>
+            </div>
+
+            <form onSubmit={handleMfsCheckout} className="space-y-4">
+              {/* Payment Method Tabs */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                  {t.mfsInstantMethod}
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMfsMethod('BKASH')}
+                    className={`p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1.5 ${
+                      mfsMethod === 'BKASH'
+                        ? 'border-pink-500 bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300 font-bold'
+                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <Smartphone className="w-4 h-4 text-pink-600" />
+                    <span className="text-xs">bKash</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setMfsMethod('NAGAD')}
+                    className={`p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1.5 ${
+                      mfsMethod === 'NAGAD'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 font-bold'
+                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <Smartphone className="w-4 h-4 text-orange-600" />
+                    <span className="text-xs">Nagad</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setMfsMethod('CARD')}
+                    className={`p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1.5 ${
+                      mfsMethod === 'CARD'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 font-bold'
+                        : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <CreditCard className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs">Card</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Amount Presets */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                  {t.amountLabel}
+                </label>
+                <div className="grid grid-cols-4 gap-2 mb-2">
+                  {[500, 1000, 3000, 5000].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setMfsAmount(amt)}
+                      className={`py-1.5 rounded-xl border text-xs font-bold transition ${
+                        mfsAmount === amt
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                          : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      ৳{amt}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  min="50"
+                  step="50"
+                  value={mfsAmount}
+                  onChange={(e) => setMfsAmount(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
+                  placeholder="Custom Amount"
+                  required
+                />
+              </div>
+
+              {/* Phone / Reference */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">
+                    Mobile Number
+                  </label>
+                  <input
+                    type="text"
+                    value={mfsPhone}
+                    onChange={(e) => setMfsPhone(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white outline-none"
+                    placeholder="017xxxxxxxx"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">
+                    TrxID Reference
+                  </label>
+                  <input
+                    type="text"
+                    value={mfsTrxId}
+                    onChange={(e) => setMfsTrxId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-mono text-slate-900 dark:text-white outline-none"
+                    placeholder="TRX..."
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center gap-2 text-[11px] text-slate-500">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Simulated Sandbox Payment: Instantly credits your ledger without real deduction.</span>
+              </div>
+
+              <button
+                type="submit"
+                disabled={mfsLoading}
+                className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/30 transition disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Zap className="w-4 h-4" />
+                {mfsLoading ? 'Processing MFS Transaction...' : `${t.confirmRecharge} (৳${mfsAmount.toLocaleString()})`}
+              </button>
+            </form>
           </div>
         </div>
       )}

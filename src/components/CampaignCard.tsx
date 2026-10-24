@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Campaign } from '@/types';
+import { useLanguage } from '@/lib/i18n';
 import { MapPin, Clock, Users, ArrowRight, Lock, CheckCircle2 } from 'lucide-react';
 
 interface CampaignCardProps {
@@ -11,6 +12,7 @@ interface CampaignCardProps {
 }
 
 export const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onCommitClick }) => {
+  const { t, language } = useLanguage();
   const isLocked = campaign.status === 'LOCKED';
   const isExpired = campaign.status === 'EXPIRED' || campaign.status === 'REFUNDED';
   const isFulfilled = campaign.status === 'COMPLETED' || campaign.status === 'AT_HUB';
@@ -49,26 +51,26 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onCommitCl
             {campaign.status === 'OPEN' && (
               <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500 text-white shadow-md shadow-emerald-500/30 animate-pulse">
                 <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
-                ACTIVE POOL
+                {t.activePool}
               </span>
             )}
             {campaign.status === 'LOCKED' && (
               <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500 text-white shadow-md">
                 <Lock className="w-3 h-3" />
-                LOCKED (TARGET MET)
+                {t.lockedPool}
               </span>
             )}
             {isFulfilled && (
               <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-500 text-white shadow-md">
                 <CheckCircle2 className="w-3 h-3" />
-                FULFILLMENT
+                {t.fulfillmentPool}
               </span>
             )}
           </div>
 
           {/* Price overlay on image bottom */}
           <div className="absolute bottom-3 left-3 text-white">
-            <p className="text-[11px] font-medium text-emerald-300">Wholesale Unit Price</p>
+            <p className="text-[11px] font-medium text-emerald-300">{t.wholesaleUnitPrice}</p>
             <p className="text-xl font-extrabold tracking-tight">
               ৳{campaign.unitPrice.toLocaleString()}{' '}
               <span className="text-xs font-normal text-slate-300">/{campaign.product.unit}</span>
@@ -78,9 +80,12 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onCommitCl
 
         {/* Card Content */}
         <div className="p-5">
-          <h3 className="font-bold text-base text-slate-900 dark:text-white line-clamp-2 mb-2 group-hover:text-emerald-600 transition-colors">
+          <Link
+            href={`/campaigns/${campaign.id}`}
+            className="font-bold text-base text-slate-900 dark:text-white line-clamp-2 mb-2 group-hover:text-emerald-600 transition-colors block"
+          >
             {campaign.title}
-          </h3>
+          </Link>
 
           <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-4">
             {campaign.description || campaign.product.description}
@@ -97,8 +102,8 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onCommitCl
           {/* Group-Buying Progress Bar */}
           <div className="space-y-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
             <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="text-slate-700 dark:text-slate-300">Pool Progress</span>
-              <span className="text-emerald-600 dark:text-emerald-400">
+              <span className="text-slate-700 dark:text-slate-300">{t.poolProgress}</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-bold">
                 {campaign.progressPercent}%
               </span>
             </div>
@@ -115,13 +120,13 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onCommitCl
 
             <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1">
               <span>
-                Committed: <strong className="text-slate-900 dark:text-white">{campaign.committedQuantity}</strong> / {campaign.targetQuantity} {campaign.product.unit}
+                {t.committed}: <strong className="text-slate-900 dark:text-white">{campaign.committedQuantity}</strong> / {campaign.targetQuantity} {campaign.product.unit}
               </span>
               <span>
                 {campaign.remainingQuantity > 0 ? (
-                  <span className="text-amber-600 font-semibold">{campaign.remainingQuantity} left</span>
+                  <span className="text-amber-600 font-semibold">{campaign.remainingQuantity} {t.left}</span>
                 ) : (
-                  <span className="text-emerald-600 font-semibold">Goal Achieved!</span>
+                  <span className="text-emerald-600 font-semibold">{t.goalAchieved}</span>
                 )}
               </span>
             </div>
@@ -134,7 +139,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onCommitCl
         <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-1.5 text-xs text-slate-500">
             <Clock className="w-3.5 h-3.5 text-slate-400" />
-            <span>{daysLeft > 0 ? `${daysLeft} days remaining` : 'Ending today'}</span>
+            <span>{daysLeft > 0 ? `${daysLeft} ${t.daysRemaining}` : t.endingToday}</span>
           </div>
 
           {campaign.status === 'OPEN' ? (
@@ -142,7 +147,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onCommitCl
               onClick={() => onCommitClick && onCommitClick(campaign)}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition"
             >
-              Commit Now
+              {t.commitNow}
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           ) : (
@@ -150,7 +155,7 @@ export const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onCommitCl
               href={`/campaigns/${campaign.id}`}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-semibold transition"
             >
-              View Pool Details
+              {t.viewPoolDetails}
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           )}

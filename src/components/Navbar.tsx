@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/authContext';
+import { useLanguage } from '@/lib/i18n';
 import { ApiClient } from '@/lib/api';
 import { Notification } from '@/types';
 import {
@@ -16,10 +17,12 @@ import {
   Menu,
   X,
   Sparkles,
+  Globe,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const { user, wallet, logout } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [showNotifications, setShowNotifications] = useState<boolean>(false);
@@ -81,21 +84,21 @@ export const Navbar: React.FC = () => {
                   Bazar<span className="text-emerald-600">Pool</span>
                 </span>
                 <span className="text-[10px] font-medium text-slate-500 uppercase tracking-widest -mt-1">
-                  Community Wholesale
+                  {t.brandSub}
                 </span>
               </div>
             </Link>
 
             <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600 dark:text-slate-300">
               <Link href="/#pools" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition">
-                Active Campaigns
+                {t.navPools}
               </Link>
               <Link href="/#how-it-works" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition">
-                How It Works
+                {t.navHow}
               </Link>
               {user && (
                 <Link href="/dashboard" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition">
-                  Dashboard
+                  {t.navDashboard}
                 </Link>
               )}
               {user && (user.role === 'HUB_COORDINATOR' || user.role === 'ADMIN') && (
@@ -104,7 +107,7 @@ export const Navbar: React.FC = () => {
                   className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 hover:underline font-semibold"
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  QR Pickup Scanner
+                  {t.navScanner}
                 </Link>
               )}
             </div>
@@ -112,6 +115,16 @@ export const Navbar: React.FC = () => {
 
           {/* User & Actions */}
           <div className="flex items-center gap-3">
+            {/* Language Toggle */}
+            <button
+              onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition"
+              title="Switch Language / ভাষা পরিবর্তন করুন"
+            >
+              <Globe className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>{language === 'en' ? 'বাংলা' : 'EN'}</span>
+            </button>
+
             {user ? (
               <>
                 {/* Live Wallet Pill */}

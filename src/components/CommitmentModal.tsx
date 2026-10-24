@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import { Campaign } from '@/types';
 import { useAuth } from '@/lib/authContext';
+import { useLanguage } from '@/lib/i18n';
 import { ApiClient } from '@/lib/api';
-import { X, ShieldCheck, Wallet, AlertCircle, PlusCircle, CheckCircle } from 'lucide-react';
+import { X, ShieldCheck, Wallet, AlertCircle, PlusCircle, CheckCircle, Zap } from 'lucide-react';
 
 interface CommitmentModalProps {
   campaign: Campaign | null;
@@ -18,6 +19,7 @@ export const CommitmentModal: React.FC<CommitmentModalProps> = ({
   onSuccess,
 }) => {
   const { user, wallet, refreshUser } = useAuth();
+  const { t } = useLanguage();
   const [quantity, setQuantity] = useState<number>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -131,7 +133,7 @@ export const CommitmentModal: React.FC<CommitmentModalProps> = ({
             <div className="space-y-4 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 mb-5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Select Quantity ({campaign.product.unit})
+                  {t.selectQuantity} ({campaign.product.unit})
                 </label>
                 <span className="text-xs text-slate-500">
                   Max: {Math.min(campaign.maxCommitmentQty, remainingCap)} {campaign.product.unit}
@@ -169,11 +171,11 @@ export const CommitmentModal: React.FC<CommitmentModalProps> = ({
               {/* Price Calculation Summary */}
               <div className="pt-3 border-t border-slate-200 dark:border-slate-700 space-y-1 text-xs">
                 <div className="flex justify-between text-slate-500">
-                  <span>Unit Wholesale Price:</span>
+                  <span>{t.unitPriceLabel}:</span>
                   <span>৳{campaign.unitPrice.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-slate-900 dark:text-white font-bold text-sm pt-1">
-                  <span>Total Commitment Amount:</span>
+                  <span>{t.totalAmountLabel}:</span>
                   <span className="text-emerald-600 dark:text-emerald-400">
                     ৳{totalCost.toLocaleString()}
                   </span>
@@ -187,23 +189,41 @@ export const CommitmentModal: React.FC<CommitmentModalProps> = ({
                 <Wallet className="w-4 h-4 text-emerald-600" />
                 <div>
                   <p className="font-semibold text-slate-800 dark:text-slate-200">
-                    Virtual Wallet Balance
+                    {t.navWallet}
                   </p>
                   <p className="text-[11px] text-slate-500">
-                    Available: ৳{userBalance.toLocaleString()}
+                    {t.availableWalletBalance}: ৳{userBalance.toLocaleString()}
                   </p>
                 </div>
               </div>
 
               {!isBalanceSufficient && (
-                <button
-                  onClick={handleSimulateTopUp}
-                  disabled={topUpLoading}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-semibold text-[11px] hover:bg-emerald-100 transition"
-                >
-                  <PlusCircle className="w-3.5 h-3.5" />
-                  {topUpLoading ? 'Adding...' : '+ Top Up ৳5,000'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => {
+                      setTopUpLoading(true);
+                      setError(null);
+                      try {
+                        await ApiClient.post('/wallet/mfs-checkout', {
+                          amount: Math.max(3000, totalCost - userBalance),
+                          method: 'BKASH',
+                          senderNumber: '01700000000',
+                          senderTrxId: `TRX${Date.now().toString().slice(-6)}`,
+                        });
+                        await refreshUser();
+                      } catch (err: any) {
+                        setError(err.message || 'Top up simulation failed.');
+                      } finally {
+                        setTopUpLoading(false);
+                      }
+                    }}
+                    disabled={topUpLoading}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-pink-50 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300 font-bold text-[11px] hover:bg-pink-100 transition border border-pink-200 dark:border-pink-800"
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                    {topUpLoading ? '...' : `⚡ bKash Top-Up`}
+                  </button>
+                </div>
               )}
             </div>
 
@@ -214,7 +234,7 @@ export const CommitmentModal: React.FC<CommitmentModalProps> = ({
               className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/30 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <ShieldCheck className="w-4 h-4" />
-              {loading ? 'Securing Funds & Reserving...' : `Confirm Commitment (৳${totalCost.toLocaleString()})`}
+              {loading ? 'Securing Funds & Reserving...' : `${t.confirmCommitment} (৳${totalCost.toLocaleString()})`}
             </button>
 
             <p className="text-[10px] text-center text-slate-400 mt-3">

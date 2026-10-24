@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/authContext';
+import { LanguageProvider } from '@/lib/i18n';
 import { Navbar } from '@/components/Navbar';
 
 const geistSans = Geist({
@@ -29,18 +30,20 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
       <body className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
         <AuthProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-8 px-4 text-center text-xs text-slate-500">
-            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p>© 2026 BazarPool Platform. Architected by Mohaimen Hridoy.</p>
-              <div className="flex items-center gap-6">
-                <span>Concurrency-Safe Pools</span>
-                <span>Double-Entry Ledger</span>
-                <span>QR Pickup Authentication</span>
+          <LanguageProvider>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-8 px-4 text-center text-xs text-slate-500">
+              <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p>© 2026 BazarPool Platform. Architected by Mohaimen Hridoy.</p>
+                <div className="flex items-center gap-6">
+                  <span>Concurrency-Safe Pools</span>
+                  <span>Double-Entry Ledger</span>
+                  <span>QR Pickup Authentication</span>
+                </div>
               </div>
-            </div>
-          </footer>
+            </footer>
+          </LanguageProvider>
         </AuthProvider>
       </body>
     </html>
