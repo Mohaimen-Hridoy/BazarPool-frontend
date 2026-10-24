@@ -1,0 +1,228 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Campaign } from '@/types';
+import { useAuth } from '@/lib/authContext';
+import { ApiClient } from '@/lib/api';
+import { X, ShieldCheck, Wallet, AlertCircle, PlusCircle, CheckCircle } from 'lucide-react';
+
+interface CommitmentModalProps {
+  campaign: Campaign | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+export const CommitmentModal: React.FC<CommitmentModalProps> = ({
+  campaign,
+  onClose,
+  onSuccess,
+}) => {
+  const { user, wallet, refreshUser } = useAuth();
+  const [quantity, setQuantity] = useState<number>(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [topUpLoading, setTopUpLoading] = useState(false);
+
+  if (!campaign) return null;
+
+  const totalCost = quantity * campaign.unitPrice;
+  const userBalance = wallet?.availableBalance || 0;
+  const isBalanceSufficient = userBalance >= totalCost;
+  const remainingCap = campaign.remainingQuantity;
+
+  const handleCommit = async () => {
+    if (!user) {
+      setError('Please sign in or create an account to join this group-buying pool.');
+      return;
+    }
+
+    if (quantity > remainingCap) {
+      setError(`Cannot commit ${quantity} units. Only ${remainingCap} units remain in this pool.`);
+      return;
+    }
+
+    if (!isBalanceSufficient) {
+      setError('Insufficient wallet balance. Please simulate a top-up first.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await ApiClient.post<any>(`/commitments/${campaign.id}`, {
+        quantity,
+      });
+
+      if (res.success) {
+        setSuccessMsg(res.message);
+        await refreshUser();
+        setTimeout(() => {
+          onSuccess();
+          onClose();
+        }, 2000);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to place commitment.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSimulateTopUp = async () => {
+    setTopUpLoading(true);
+    setError(null);
+    try {
+      await ApiClient.post('/wallet/top-up', { amount: 5000 });
+      await refreshUser();
+    } catch (err: any) {
+      setError(err.message || 'Top up simulation failed.');
+    } finally {
+      setTopUpLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative overflow-hidden">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {successMsg ? (
+          <div className="text-center py-8 space-y-4">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center mx-auto animate-bounce">
+              <CheckCircle className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+              Commitment Confirmed!
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300 max-w-sm mx-auto">
+              {successMsg}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-5">
+              <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest">
+                Join Community Wholesale Pool
+              </span>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white mt-1 line-clamp-1">
+                {campaign.title}
+              </h2>
+              <p className="text-xs text-slate-500">
+                Hub: {campaign.pickupHub.name} ({campaign.pickupHub.city})
+              </p>
+            </div>
+
+            {error && (
+              <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* Quantity Selector */}
+            <div className="space-y-4 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 mb-5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Select Quantity ({campaign.product.unit})
+                </label>
+                <span className="text-xs text-slate-500">
+                  Max: {Math.min(campaign.maxCommitmentQty, remainingCap)} {campaign.product.unit}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  disabled={quantity <= campaign.minCommitmentQty}
+                  onClick={() => setQuantity((q) => Math.max(campaign.minCommitmentQty, q - 1))}
+                  className="w-10 h-10 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 font-bold text-lg flex items-center justify-center hover:bg-slate-100 transition disabled:opacity-40"
+                >
+                  -
+                </button>
+
+                <div className="flex-1 text-center font-bold text-xl text-slate-900 dark:text-white">
+                  {quantity} <span className="text-xs text-slate-400 font-normal">{campaign.product.unit}</span>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={quantity >= Math.min(campaign.maxCommitmentQty, remainingCap)}
+                  onClick={() =>
+                    setQuantity((q) =>
+                      Math.min(campaign.maxCommitmentQty, remainingCap, q + 1)
+                    )
+                  }
+                  className="w-10 h-10 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 font-bold text-lg flex items-center justify-center hover:bg-slate-100 transition disabled:opacity-40"
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Price Calculation Summary */}
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-700 space-y-1 text-xs">
+                <div className="flex justify-between text-slate-500">
+                  <span>Unit Wholesale Price:</span>
+                  <span>৳{campaign.unitPrice.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-slate-900 dark:text-white font-bold text-sm pt-1">
+                  <span>Total Commitment Amount:</span>
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    ৳{totalCost.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Wallet Balance Status */}
+            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between mb-5 text-xs">
+              <div className="flex items-center gap-2">
+                <Wallet className="w-4 h-4 text-emerald-600" />
+                <div>
+                  <p className="font-semibold text-slate-800 dark:text-slate-200">
+                    Virtual Wallet Balance
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Available: ৳{userBalance.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              {!isBalanceSufficient && (
+                <button
+                  onClick={handleSimulateTopUp}
+                  disabled={topUpLoading}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-semibold text-[11px] hover:bg-emerald-100 transition"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  {topUpLoading ? 'Adding...' : '+ Top Up ৳5,000'}
+                </button>
+              )}
+            </div>
+
+            {/* Commit Button */}
+            <button
+              onClick={handleCommit}
+              disabled={loading || !isBalanceSufficient}
+              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/30 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              {loading ? 'Securing Funds & Reserving...' : `Confirm Commitment (৳${totalCost.toLocaleString()})`}
+            </button>
+
+            <p className="text-[10px] text-center text-slate-400 mt-3">
+              Funds are held in your reserved virtual wallet balance. If the pool expires before the target is reached, 100% of funds are automatically credited back.
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
